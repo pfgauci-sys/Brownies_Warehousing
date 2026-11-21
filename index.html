@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f766e">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<title>ShiftTrack</title>
+<title>Brownies Warehouse</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:system-ui,Roboto,sans-serif;background:#f1f5f4;color:#0f172a;font-size:17px}
@@ -42,7 +42,7 @@ h2{font-size:18px;margin:6px 0 10px}
 </style>
 </head>
 <body>
-<header><h1 id="ttl">ShiftTrack</h1><button class="small sec" id="hbtn" style="display:none"></button></header>
+<header><h1 id="ttl">Brownies Warehouse</h1><button class="small sec" id="hbtn" style="display:none"></button></header>
 <main id="app"></main>
 <div id="modal"></div>
 <script>
@@ -84,7 +84,7 @@ function header(title,btnText,btnFn){
 function stopTick(){if(tick){clearInterval(tick);tick=null}}
 
 function loginScreen(){
-  stopTick();cur=null;header('ShiftTrack');
+  stopTick();cur=null;header('Brownies Warehouse');
   if(!db.admin){return setupScreen()}
   $('#app').innerHTML=`<h2>Who are you?</h2><div class="users">${db.users.map(u=>`<button data-id="${u.id}">${esc(u.name)}</button>`).join('')||'<p class="muted">No staff added yet. Manager: tap below to add users.</p>'}</div>
   <button class="sec" style="width:100%;margin-top:14px" id="adm">Manager login</button>`;
@@ -183,8 +183,8 @@ function adminScreen(tab){
      <button style="width:100%;margin-bottom:8px" id="d">Download detailed log (CSV)</button>
      <button class="sec" style="width:100%" id="s">Download summary by task (CSV)</button></div>`;
     const rng=()=>db.records.filter(r=>r.date>=$('#f').value&&r.date<=$('#t').value);
-    $('#d').onclick=()=>download(`shifttrack-detail-${$('#f').value}_${$('#t').value}.csv`,detailCsv(rng()));
-    $('#s').onclick=()=>download(`shifttrack-summary-${$('#f').value}_${$('#t').value}.csv`,summaryCsv(rng()));
+    $('#d').onclick=()=>download(`brownies-detail-${$('#f').value}_${$('#t').value}.csv`,detailCsv(rng()));
+    $('#s').onclick=()=>download(`brownies-summary-${$('#f').value}_${$('#t').value}.csv`,summaryCsv(rng()));
   }else if(tab==='live'){
     const t=dateStr(new Date());
     el.innerHTML=`<div class="card"><h2>Today</h2><table><tr><th>Staff</th><th>Now</th><th>Since</th></tr>${db.users.map(u=>{const o=openRec(u.id);const st=dayState(u.id);

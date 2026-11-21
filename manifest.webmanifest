@@ -1,6 +1,6 @@
 {
-  "name": "ShiftTrack",
-  "short_name": "ShiftTrack",
+  "name": "Brownies Warehouse",
+  "short_name": "Brownies WH",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
