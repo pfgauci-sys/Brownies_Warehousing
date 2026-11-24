@@ -1,6 +1,6 @@
 {
-  "name": "Brownies Warehouse",
-  "short_name": "Brownies WH",
+  "name": "Tavolino Warehouse KPIs",
+  "short_name": "Tavolino KPIs",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

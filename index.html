@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f766e">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<title>Brownies Warehouse</title>
+<title>Tavolino Warehouse KPIs</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:system-ui,Roboto,sans-serif;background:#f1f5f4;color:#0f172a;font-size:17px}
@@ -42,7 +42,7 @@ h2{font-size:18px;margin:6px 0 10px}
 </style>
 </head>
 <body>
-<header><h1 id="ttl">Brownies Warehouse</h1><button class="small sec" id="hbtn" style="display:none"></button></header>
+<header><h1 id="ttl">Tavolino Warehouse KPIs</h1><button class="small sec" id="hbtn" style="display:none"></button></header>
 <main id="app"></main>
 <div id="modal"></div>
 <script>
@@ -65,6 +65,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
 
 // ---------- state ----------
 let cur=null;        // {role:'user'|'admin', id}
+function setSession(){try{if(cur&&cur.role==='user')localStorage.setItem('tavolino_session',cur.id);else localStorage.removeItem('tavolino_session')}catch(e){}}
+function logout(){cur=null;setSession();loginScreen()}
 let tick=null;
 const userById=id=>db.users.find(u=>u.id===id);
 const openRec=uid_=>db.records.find(r=>r.userId===uid_&&!r.end);
@@ -84,12 +86,12 @@ function header(title,btnText,btnFn){
 function stopTick(){if(tick){clearInterval(tick);tick=null}}
 
 function loginScreen(){
-  stopTick();cur=null;header('Brownies Warehouse');
+  stopTick();cur=null;header('Tavolino Warehouse KPIs');
   if(!db.admin){return setupScreen()}
   $('#app').innerHTML=`<h2>Who are you?</h2><div class="users">${db.users.map(u=>`<button data-id="${u.id}">${esc(u.name)}</button>`).join('')||'<p class="muted">No staff added yet. Manager: tap below to add users.</p>'}</div>
   <button class="sec" style="width:100%;margin-top:14px" id="adm">Manager login</button>`;
   document.querySelectorAll('.users button').forEach(b=>b.onclick=()=>pinPrompt(userById(b.dataset.id).name,pin=>{
-    const u=userById(b.dataset.id);if(u.pin===pin){cur={role:'user',id:u.id};closeStale(u.id);workScreen()}else return 'Wrong PIN'}));
+    const u=userById(b.dataset.id);if(u.pin===pin){cur={role:'user',id:u.id};setSession();closeStale(u.id);workScreen()}else return 'Wrong PIN'}));
   $('#adm').onclick=()=>pinPrompt('Manager',pin=>{if(db.admin.pin===pin){cur={role:'admin'};closeStale();adminScreen('export')}else return 'Wrong PIN'});
 }
 function setupScreen(){
@@ -116,7 +118,7 @@ function dayState(userId){
   return {recs,last,active:!!last&&last.task!=='End of Day'};
 }
 function workScreen(){
-  const u=userById(cur.id);header(u.name,'Log out',loginScreen);
+  const u=userById(cur.id);header(u.name,'Log out',logout);
   const st=dayState(u.id),o=openRec(u.id);
   const nowTask=o?o.task:null;
   $('#app').innerHTML=`<div class="card now"><div class="muted" style="color:#ccfbf1">${st.active?'Current task':st.last?'Day finished':'Not started'}</div>
@@ -125,9 +127,9 @@ function workScreen(){
    <div class="grid">${TASKS.map((t,i)=>{
      let dis=false,cls='task';
      if(!st.active){dis=t!=='Start of day'}else{dis=t==='Start of day'}
-     if(t===nowTask){cls+=' active';dis=true}
+     if(t===nowTask){cls+=' active';if(!PICK_TASKS.includes(t))dis=true}
      if(t==='End of Day')cls+=' end';if(t==='Meal Break')cls+=' meal';
-     return `<button class="${cls}" data-t="${i}" ${dis?'disabled':''} ${t==='Start of day'||t==='End of Day'?'style="grid-column:span 2"':''}>${esc(t)}</button>`}).join('')}</div>
+     return `<button class="${cls}" data-t="${i}" ${dis?'disabled':''} ${t==='Start of day'||t==='End of Day'?'style="grid-column:span 2"':''}>${esc(t===nowTask&&PICK_TASKS.includes(t)?'Next pick (new number)':t)}</button>`}).join('')}</div>
    <div class="card" style="margin-top:14px"><h2>Today</h2><table>${st.recs.map(r=>`<tr><td>${timeStr(new Date(r.start))}</td><td>${esc(r.task)}${r.pick?' #'+esc(r.pick):''}</td><td>${r.end?fmtDur(new Date(r.end)-new Date(r.start)):'…'}</td></tr>`).join('')||'<tr><td class="muted">Nothing yet</td></tr>'}</table></div>`;
   document.querySelectorAll('.grid button').forEach(b=>b.onclick=()=>chooseTask(TASKS[b.dataset.t]));
   stopTick();if(o){const s=new Date(o.start);const f=()=>{const e=$('#tm');if(e)e.textContent=fmtDur(Date.now()-s)};f();tick=setInterval(f,1000)}
@@ -171,7 +173,7 @@ function pickPrompt(cb){
 
 // ---------- admin ----------
 function adminScreen(tab){
-  stopTick();header('Manager',"Log out",loginScreen);
+  stopTick();header('Manager',"Log out",logout);
   const tabs=[['export','Export'],['live','Today'],['users','Staff'],['import','Merge'],['set','Settings']];
   $('#app').innerHTML=`<div class="tabs">${tabs.map(t=>`<button class="${t[0]===tab?'':'sec'}" data-t="${t[0]}">${t[1]}</button>`).join('')}</div><div id="tab"></div>`;
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>adminScreen(b.dataset.t));
@@ -183,8 +185,8 @@ function adminScreen(tab){
      <button style="width:100%;margin-bottom:8px" id="d">Download detailed log (CSV)</button>
      <button class="sec" style="width:100%" id="s">Download summary by task (CSV)</button></div>`;
     const rng=()=>db.records.filter(r=>r.date>=$('#f').value&&r.date<=$('#t').value);
-    $('#d').onclick=()=>download(`brownies-detail-${$('#f').value}_${$('#t').value}.csv`,detailCsv(rng()));
-    $('#s').onclick=()=>download(`brownies-summary-${$('#f').value}_${$('#t').value}.csv`,summaryCsv(rng()));
+    $('#d').onclick=()=>download(`tavolino-detail-${$('#f').value}_${$('#t').value}.csv`,detailCsv(rng()));
+    $('#s').onclick=()=>download(`tavolino-summary-${$('#f').value}_${$('#t').value}.csv`,summaryCsv(rng()));
   }else if(tab==='live'){
     const t=dateStr(new Date());
     el.innerHTML=`<div class="card"><h2>Today</h2><table><tr><th>Staff</th><th>Now</th><th>Since</th></tr>${db.users.map(u=>{const o=openRec(u.id);const st=dayState(u.id);
@@ -251,7 +253,11 @@ function download(name,text){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
 }
 
-loginScreen();
+(function boot(){
+  try{const id=localStorage.getItem('tavolino_session');
+    if(db.admin&&id&&userById(id)){cur={role:'user',id};closeStale(id);return workScreen()}}catch(e){}
+  loginScreen();
+})();
 </script>
 </body>
 </html>
